@@ -1,3 +1,54 @@
+This is a port of `mod_markdown` that sandboxes the underlying markdown library
+(called discount) with RLBox.
+
+1. Install apache2 and apxs (see below in the old readme).
+
+2. Download and build [libmarkdown.so](https://github.com/PLSysSec/libmarkdown).
+
+3. Link [RLBox](https://github.com/shravanrn/rlbox_api) header files in this project:
+
+```
+ln -s $(RLBOX_DIR)/rlbox.h
+ln -s $(RLBOX_DIR)/RLBox_DynLib.h
+```
+
+2. Assuming you built the shared library in `<LIBMARKDOWN>`:
+
+```
+LIBMARKDOWN=<LIBMARKDOWN> ./build.sh
+```
+
+You may need to modify build.sh for your machine, depeding on where httpd headers and libtool are installed. You may find the old Makefile useful.
+
+The build script will general a bunch of warnings we're going to ignore for this research prototype.
+
+3.  Load apache module by modifying httpd.conf:
+
+~~~
+LoadModule markdown_module modules/mod_markdown.so
+~~~
+
+You need to specify full path:
+~~~
+LoadModule markdown_module /usr/lib/apache2/modules/mod_markdown.so
+~~~
+
+Then add markdown handler to the directory:
+
+~~~
+<Directory /var/www>
+    AddHandler markdown .md
+    DirectoryIndex index.md
+</Directory>
+~~~
+
+4. Dump some markdown files in `/var/www`
+
+5. Run apache: `sudo apachectl start`
+
+
+# OLD README
+
 mod_markdown
 ============
 
@@ -7,9 +58,7 @@ mod_markdown is Markdown filter module for Apache HTTPD Server.
 
 ## Dependencies
 
-* discount
-
-  http://www.pell.portland.or.us/~orc/Code/discount/
+* The [discount](http://www.pell.portland.or.us/~orc/Code/discount/) library that we sandbox. You want to get it from [here]().
 
 For Debian/Ubuntu:
 
