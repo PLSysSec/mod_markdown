@@ -5,3 +5,5 @@ run
 benchmarks/node_modules/
 mod_markdown.o
 mod_markdown.la
+mod_markdown_nacl.la
+mod_markdown_nacl.o

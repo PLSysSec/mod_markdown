@@ -39,7 +39,7 @@ build:
 	echo $(LIBTOOL_DIR)
 	g++ -std=c++14 `pkg-config --cflags apr-1` -fPIC -DPIC -I$(LIBMARKDOWN) -I$(RLBOX_DIR) -I$(HTTPD_DIR) -fpermissive -Wl,--export-dynamic -lstdc++ -lsupc++ -ldl -c mod_markdown.cpp
 	$(LIBTOOL_DIR)/libtool --silent --mode=link g++ -std=c++14 -Wl,-O1,--sort-common,--as-needed,-z,relro,-z,now -o mod_markdown.la  -lapr-1 -rpath /usr/lib/httpd/modules -lstdc++ -lsupc++ -ldl -module -avoid-version  mod_markdown.o
-	g++ std=c++14 `pkg-config --cflags apr-1` -fPIC -DPIC -DUSE_NACL -I$(LIBMARKDOWN) -I$(RLBOX_DIR) -I$(HTTPD_DIR) -I$(SANDBOXING_NACL_DIR)/native_client/src/trusted/dyn_ldr/ -fpermissive -Wl,--export-dynamic -lstdc++ -lsupc++ -ldl  $(FLAGS_WHEN_LINKING_NACL_EXAMPLES_64) -c mod_markdown.cpp -o mod_markdown_nacl.o
+	g++ -std=c++14 `pkg-config --cflags apr-1` -fPIC -DPIC -DUSE_NACL -I$(LIBMARKDOWN) -I$(RLBOX_DIR) -I$(HTTPD_DIR) -I$(SANDBOXING_NACL_DIR)/native_client/src/trusted/dyn_ldr/ -fpermissive -Wl,--export-dynamic -lstdc++ -lsupc++ -ldl  $(FLAGS_WHEN_LINKING_NACL_EXAMPLES_64) -c mod_markdown.cpp -o mod_markdown_nacl.o
 	$(LIBTOOL_DIR)/libtool --silent --mode=link g++ -std=c++14 -Wl,-O1,--sort-common,--as-needed,-z,relro,-z,now -o mod_markdown_nacl.la  -lapr-1 -rpath /usr/lib/httpd/modules -lstdc++ -lsupc++ -ldl -module -avoid-version $(FLAGS_WHEN_LINKING_NACL_EXAMPLES_64) mod_markdown_nacl.o
 
 # APACHE2_CONF_PATH:= $(shell \
