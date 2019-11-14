@@ -437,9 +437,9 @@ static int markdown_handler(request_rec *r)
   fseek(fp, 0, SEEK_SET);
 
   #if defined(USE_NACL)
-  RLBoxSandbox<TRLBox>* sandbox = RLBoxSandbox<TRLBox>::createSandbox("/tmp/irt_core.nexe", "/tmp/libmarkdown.nexe");
+  static RLBoxSandbox<TRLBox>* sandbox = RLBoxSandbox<TRLBox>::createSandbox("/tmp/irt_core.nexe", "/tmp/libmarkdown.nexe");
   #else
-  RLBoxSandbox<TRLBox>* sandbox = RLBoxSandbox<TRLBox>::createSandbox("", "/tmp/libmarkdown.so");
+  static RLBoxSandbox<TRLBox>* sandbox = RLBoxSandbox<TRLBox>::createSandbox("", "/tmp/libmarkdown.so");
   #endif
   tainted<char*, TRLBox> sandboxStr = sandbox->template mallocInSandbox<char>(length);
   if (sandboxStr == nullptr) {
@@ -454,8 +454,7 @@ static int markdown_handler(request_rec *r)
     return HTTP_INTERNAL_SERVER_ERROR;
   }
   markdown_output(sandbox, doc, r);
-  sandbox->destroySandbox();
-  free(sandbox);
+  sandbox->template freeInSandbox(sandboxStr);
   return OK;
 }
 
