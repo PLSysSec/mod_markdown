@@ -2,3 +2,6 @@
 .libs/
 autom4te.cache/
 run
+benchmarks/node_modules/
+mod_markdown.o
+mod_markdown.la

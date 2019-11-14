@@ -31,11 +31,16 @@ ifeq ($(LIBTOOL_DIR),)
 $(error Could not find the location of libtool. Please edit the makefile to point to the location)
 endif
 
+SANDBOXING_NACL_DIR=$(shell realpath ../Sandboxing_NaCl)
+FLAGS_WHEN_LINKING_NACL_EXAMPLES_64 = -pie -Wl,-z,relro -Wl,-z,now -Wl,-z,noexecstack -fPIC -Wl,-rpath=$(SANDBOXING_NACL_DIR)/native_client/scons-out-firefox/opt-linux-x86-64/lib -L$(SANDBOXING_NACL_DIR)/native_client/scons-out-firefox/opt-linux-x86-64/lib -ldyn_ldr -lsel -lnacl_error_code -lenv_cleanser -lnrd_xfer -lnacl_perf_counter -lnacl_base -limc -lnacl_fault_inject -lnacl_interval -lplatform_qual_lib -lvalidators -ldfa_validate_caller_x86_64 -lcpu_features -lvalidation_cache -lplatform -lgio -lnccopy_x86_64 -lrt -lpthread
+
 build:
 	echo $(HTTPD_DIR)
 	echo $(LIBTOOL_DIR)
 	g++ -std=c++14 `pkg-config --cflags apr-1` -fPIC -DPIC -I$(LIBMARKDOWN) -I$(RLBOX_DIR) -I$(HTTPD_DIR) -fpermissive -Wl,--export-dynamic -lstdc++ -lsupc++ -ldl -c mod_markdown.cpp
 	$(LIBTOOL_DIR)/libtool --silent --mode=link g++ -std=c++14 -Wl,-O1,--sort-common,--as-needed,-z,relro,-z,now -o mod_markdown.la  -lapr-1 -rpath /usr/lib/httpd/modules -lstdc++ -lsupc++ -ldl -module -avoid-version  mod_markdown.o
+	g++ std=c++14 `pkg-config --cflags apr-1` -fPIC -DPIC -DUSE_NACL -I$(LIBMARKDOWN) -I$(RLBOX_DIR) -I$(HTTPD_DIR) -I$(SANDBOXING_NACL_DIR)/native_client/src/trusted/dyn_ldr/ -fpermissive -Wl,--export-dynamic -lstdc++ -lsupc++ -ldl  $(FLAGS_WHEN_LINKING_NACL_EXAMPLES_64) -c mod_markdown.cpp -o mod_markdown_nacl.o
+	$(LIBTOOL_DIR)/libtool --silent --mode=link g++ -std=c++14 -Wl,-O1,--sort-common,--as-needed,-z,relro,-z,now -o mod_markdown_nacl.la  -lapr-1 -rpath /usr/lib/httpd/modules -lstdc++ -lsupc++ -ldl -module -avoid-version $(FLAGS_WHEN_LINKING_NACL_EXAMPLES_64) mod_markdown_nacl.o
 
 # APACHE2_CONF_PATH:= $(shell \
 # 	if [ -e "/etc/apache2/httpd.conf" ]; then \

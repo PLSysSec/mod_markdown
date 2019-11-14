@@ -12,7 +12,7 @@
  **  for the URL /markdown in as follows:
  **
  **    #   httpd.conf
- **    LoadModule markdown_module modules/mod_markdown.so
+ **    LoadModule markdown_rlbox_module modules/mod_markdown.so
  **    <Location /markdown>
  **    AddHandler markdown .md
  **    </Location>
@@ -49,15 +49,25 @@
 
 #include "mkdio.h"
 
-#include <dlfcn.h>
-#include "RLBox_DynLib.h"
+#if defined(USE_NACL)
+  #include "RLBox_NaCl.h"
+  using TRLBox = RLBox_NaCl;
+  #define RL_MODULE_NAME "markdown_rlbox_nacl"
+  #define RL_MODULE_NAME_SUFFIX markdown_rlbox_nacl_module
+#else
+  #include <dlfcn.h>
+  #include "RLBox_DynLib.h"
+  using TRLBox = RLBox_DynLib;
+  #define RL_MODULE_NAME "markdown_rlbox"
+  #define RL_MODULE_NAME_SUFFIX markdown_rlbox_module
+#endif
 #include "rlbox.h"
 
 using namespace rlbox;
 
 
 
-// module AP_MODULE_DECLARE_DATA markdown_module;
+// module AP_MODULE_DECLARE_DATA markdown_rlbox_module;
 static void *markdown_config(apr_pool_t * p, char *dummy);
 static void markdown_register_hooks(apr_pool_t * p);
 static const char *set_markdown_doctype(cmd_parms * cmd, void *conf, const char *arg);
@@ -82,7 +92,7 @@ static const command_rec markdown_cmds[] = {
 
 
 /* Dispatch list for API hooks */
-extern "C" module AP_MODULE_DECLARE_DATA markdown_module = {
+extern "C" module AP_MODULE_DECLARE_DATA RL_MODULE_NAME_SUFFIX = {
   STANDARD20_MODULE_STUFF,
   markdown_config,            /* create per-dir    config structures */
   NULL,                       /* merge  per-dir    config structures */
@@ -179,22 +189,22 @@ typedef struct {
 #define ROOT_ELEMENT_HTML_ATTR_LANG
 */
 
-void markdown_output(RLBoxSandbox<RLBox_DynLib>* sandbox, tainted<MMIOT*, RLBox_DynLib> doc, request_rec *r)
+void markdown_output(RLBoxSandbox<TRLBox>* sandbox, tainted<MMIOT*, TRLBox> doc, request_rec *r)
 {
   char *title = nullptr;
   // --> 
-  tainted<char*, RLBox_DynLib> titleSbox;
+  tainted<char*, TRLBox> titleSbox;
   int size;
   char *p;
   // -->
 #define MAX_DOC_SIZE 8192
-  tainted<char**, RLBox_DynLib> pSbox = sandbox->template mallocInSandbox<char*>();
+  tainted<char**, TRLBox> pSbox = sandbox->template mallocInSandbox<char*>();
   // --
   markdown_conf *conf;
   list_t *css;
 
   conf = (markdown_conf *) ap_get_module_config(r->per_dir_config,
-      &markdown_module);
+      &RL_MODULE_NAME_SUFFIX);
   // mkd_compile(doc, conf->mkd_flags);
   // -->
   sandbox_invoke(sandbox, mkd_compile, doc, conf->mkd_flags);
@@ -340,7 +350,7 @@ void markdown_output(RLBoxSandbox<RLBox_DynLib>* sandbox, tainted<MMIOT*, RLBox_
   size = sandbox_invoke(sandbox, mkd_document, doc, pSbox).
             copyAndVerify([](int size){ return size >= 0 ? size : EOF; });
   if (size != EOF) {
-    ap_rwrite(*pSbox.UNSAFE_Unverified(), size, r);
+    ap_rwrite(pSbox->UNSAFE_Unverified(), size, r);
   }
   ap_rputc('\n', r);
 
@@ -361,14 +371,14 @@ static int markdown_handler(request_rec *r)
   FILE *fp;
   // MMIOT* doc;
   // -->
-  tainted<MMIOT*, RLBox_DynLib> doc;
+  tainted<MMIOT*, TRLBox> doc;
   // --
   markdown_conf *conf;
 
   conf = (markdown_conf *) ap_get_module_config(r->per_dir_config,
-      &markdown_module);
+      &RL_MODULE_NAME_SUFFIX);
 
-  if (strcmp(r->handler, "markdown")) {
+  if (strcmp(r->handler, RL_MODULE_NAME)) {
     return DECLINED;
   }
 
@@ -422,31 +432,30 @@ static int markdown_handler(request_rec *r)
   // instead of using mkd_in, let's read the file in trusted code and pass the stirng
   // fclose(fp);
   // -->
-#define MAX_MD_FILE 4096
-  char* str = (char*) malloc(sizeof(char)*MAX_MD_FILE);
+  fseek(fp, 0, SEEK_END);
+  auto length = ftell(fp);
+  fseek(fp, 0, SEEK_SET);
 
-  if (!str) {
+  #if defined(USE_NACL)
+  RLBoxSandbox<TRLBox>* sandbox = RLBoxSandbox<TRLBox>::createSandbox("/tmp/irt_core.nexe", "/tmp/libmarkdown.nexe");
+  #else
+  RLBoxSandbox<TRLBox>* sandbox = RLBoxSandbox<TRLBox>::createSandbox("", "/tmp/libmarkdown.so");
+  #endif
+  tainted<char*, TRLBox> sandboxStr = sandbox->template mallocInSandbox<char>(length);
+  if (sandboxStr == nullptr) {
     return HTTP_INTERNAL_SERVER_ERROR;
   }
-
-  memset((void*) str, 0, sizeof(char)*MAX_MD_FILE);
-  fread(str, sizeof(char), MAX_MD_FILE - 1, fp);
+  fread(sandboxStr.UNSAFE_Unverified(), sizeof(char), length, fp);
   fclose(fp);
-  RLBoxSandbox<RLBox_DynLib>* sandbox = RLBoxSandbox<RLBox_DynLib>::createSandbox("", "/tmp/libmarkdown.so");
-  tainted<char*, RLBox_DynLib> sandboxStr = sandbox->template mallocInSandbox<char>(MAX_MD_FILE);
-  memcpy(sandbox, sandboxStr, str, sizeof(char)*MAX_MD_FILE);
-  doc = sandbox_invoke(sandbox, mkd_string, sandboxStr, strlen(str), 0);
+  doc = sandbox_invoke(sandbox, mkd_string, sandboxStr, strlen(sandboxStr.UNSAFE_Unverified()), 0);
   // --
   if (doc == NULL) {
     // ap_log_rerror(APLOG_MARK, APLOG_ERR, 0, r, "mkd_in() returned NULL\n");
     return HTTP_INTERNAL_SERVER_ERROR;
   }
   markdown_output(sandbox, doc, r);
-
-  sandbox->freeInSandbox(sandboxStr);
   sandbox->destroySandbox();
   free(sandbox);
-
   return OK;
 }
 
