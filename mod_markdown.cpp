@@ -402,7 +402,7 @@ static int markdown_handler(request_rec *r)
   #if defined(USE_NACL)
   static RLBoxSandbox<TRLBox>* sandbox = RLBoxSandbox<TRLBox>::createSandbox("/tmp/irt_core.nexe", "/tmp/libmarkdown.nexe");
   #else
-  static RLBoxSandbox<TRLBox>* sandbox = RLBoxSandbox<TRLBox>::createSandbox("", "/tmp/libmarkdown.so");
+  static RLBoxSandbox<TRLBox>* sandbox = RLBoxSandbox<TRLBox>::createSandbox("", "/usr/local/lib/libmarkdown.so");
   #endif
   tainted<char*, TRLBox> sandboxStr = sandbox->template mallocInSandbox<char>(length);
   if (sandboxStr == nullptr) {
