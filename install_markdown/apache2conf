@@ -1,7 +1,0 @@
-<Directory /var/www/>
-        Options Indexes FollowSymLinks
-        AddHandler markdown_rlbox .rlboxmd
-        AddHandler markdown_rlbox_nacl .rlboxnaclmd
-        AllowOverride None
-        Require all granted
-</Directory>
