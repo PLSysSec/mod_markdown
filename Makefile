@@ -23,7 +23,7 @@ LIBTOOL_DIR := $(shell \
 	elif [ -e "/usr/share/apr-1.0/build/libtool" ]; then \
 		echo /usr/share/apr-1.0/build/; \
 	else \
-		echo ""; \
+		echo "$(which libtool)"; \
 	fi \
 )
 
