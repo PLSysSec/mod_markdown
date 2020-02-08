@@ -13,6 +13,8 @@ HTTPD_DIR := $(shell \
 	fi \
 )
 
+CURR_DIR := $(shell realpath ./)
+
 ifeq ($(HTTPD_DIR),)
 $(error Could not find the location of httpd.h. Please edit the makefile to point to the location)
 endif
@@ -41,6 +43,12 @@ build:
 	$(LIBTOOL_DIR)/libtool --silent --mode=link g++ -std=c++14 -Wl,-O1,--sort-common,--as-needed,-z,relro,-z,now -o mod_markdown.la  -lapr-1 -rpath /usr/lib/httpd/modules -lstdc++ -lsupc++ -ldl -module -avoid-version  mod_markdown.o
 	g++ -O3 -std=c++14 `pkg-config --cflags apr-1` -fPIC -DPIC -DUSE_NACL -I$(LIBMARKDOWN) -I$(RLBOX_DIR) -I$(HTTPD_DIR) -I$(SANDBOXING_NACL_DIR)/native_client/src/trusted/dyn_ldr/ -fpermissive -Wl,--export-dynamic -lstdc++ -lsupc++ -ldl  $(FLAGS_WHEN_LINKING_NACL_EXAMPLES_64) -c mod_markdown.cpp -o mod_markdown_nacl.o
 	$(LIBTOOL_DIR)/libtool --silent --mode=link g++ -std=c++14 -Wl,-O1,--sort-common,--as-needed,-z,relro,-z,now -o mod_markdown_nacl.la  -lapr-1 -rpath /usr/lib/httpd/modules -lstdc++ -lsupc++ -ldl -module -avoid-version $(FLAGS_WHEN_LINKING_NACL_EXAMPLES_64) mod_markdown_nacl.o
+
+install:
+	cd install_markdown && sudo cat apache2conf >> /etc/apache2/apache2.conf && \
+	sudo cp ./files/* /var/www/
+	echo LoadModule markdown_rlbox_module $(CURR_DIR)/.libs/mod_markdown.so           | sudo tee -a /etc/apache2/mods-enabled/markdown.load
+	echo LoadModule markdown_rlbox_nacl_module $(CURR_DIR)/.libs/mod_markdown_nacl.so | sudo tee -a /etc/apache2/mods-enabled/markdown.load
 
 # APACHE2_CONF_PATH:= $(shell \
 # 	if [ -e "/etc/apache2/httpd.conf" ]; then \
