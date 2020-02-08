@@ -48,7 +48,7 @@ install:
 	## Terribly sorry about this install process! Research! Will fix later.
 	cd install_markdown && sudo cp apache2.conf /etc/apache2/ && \
 	sudo cp -r ./files/* /var/www/html/
-	cp $(LIBMARKDOWN)/libmarkdown.nexe /tmp/
+	cp $(CURR_DIR)/libmarkdown.nexe /tmp/
 	cp $(CURR_DIR)/irt_core.nexe /tmp/
 	echo LoadModule markdown_rlbox_module $(CURR_DIR)/.libs/mod_markdown.so           | sudo tee -a /etc/apache2/mods-enabled/markdown.load
 	echo LoadModule markdown_rlbox_nacl_module $(CURR_DIR)/.libs/mod_markdown_nacl.so | sudo tee -a /etc/apache2/mods-enabled/markdown.load
