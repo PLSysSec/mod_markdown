@@ -50,6 +50,10 @@ install:
 	echo LoadModule markdown_rlbox_module $(CURR_DIR)/.libs/mod_markdown.so           | sudo tee -a /etc/apache2/mods-enabled/markdown.load
 	echo LoadModule markdown_rlbox_nacl_module $(CURR_DIR)/.libs/mod_markdown_nacl.so | sudo tee -a /etc/apache2/mods-enabled/markdown.load
 
+bench:
+	autocannon --latency http://localhost/README.rlboxmd
+	autocannon --latency http://localhost/README.rlboxnaclmd
+
 # APACHE2_CONF_PATH:= $(shell \
 # 	if [ -e "/etc/apache2/httpd.conf" ]; then \
 # 		echo /etc/apache2/httpd.conf; \
