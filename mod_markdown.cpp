@@ -65,43 +65,7 @@
 
 using namespace rlbox;
 
-
-
-// module AP_MODULE_DECLARE_DATA markdown_rlbox_module;
-static void *markdown_config(apr_pool_t * p, char *dummy);
-static void markdown_register_hooks(apr_pool_t * p);
-static const char *set_markdown_doctype(cmd_parms * cmd, void *conf, const char *arg);
-static const char *set_markdown_css(cmd_parms * cmd, void *conf, const char *arg);
-static const char *set_markdown_header(cmd_parms * cmd, void *conf, const char *arg);
-static const char *set_markdown_footer(cmd_parms * cmd, void *conf, const char *arg);
-static const char *set_markdown_flags(cmd_parms * cmd, void *conf, const char *arg);
-
-static const command_rec markdown_cmds[] = {
-  AP_INIT_TAKE1("MarkdownDoctype", set_markdown_doctype, NULL, OR_ALL,
-      "set Doctype"),
-  AP_INIT_TAKE1("MarkdownCSS", set_markdown_css, NULL, OR_ALL,
-      "set CSS"),
-  AP_INIT_TAKE1("MarkdownHeaderHtml", set_markdown_header, NULL, OR_ALL,
-      "set Header HTML"),
-  AP_INIT_TAKE1("MarkdownFooterHtml", set_markdown_footer, NULL, OR_ALL,
-      "set Footer HTML"),
-  AP_INIT_TAKE1("MarkdownFlags", set_markdown_flags, NULL, OR_ALL,
-      "set Discount flags"),
-  {NULL}
-};
-
-
-/* Dispatch list for API hooks */
-extern "C" module AP_MODULE_DECLARE_DATA RL_MODULE_NAME_SUFFIX = {
-  STANDARD20_MODULE_STUFF,
-  markdown_config,            /* create per-dir    config structures */
-  NULL,                       /* merge  per-dir    config structures */
-  NULL,                       /* create per-server config structures */
-  NULL,                       /* merge  per-server config structures */
-  markdown_cmds,              /* table of config file commands       */
-  markdown_register_hooks     /* register hooks                      */
-};
-
+extern "C" module AP_MODULE_DECLARE_DATA RL_MODULE_NAME_SUFFIX;
 
 typedef enum {
   HTML_5 = 0, XHTML_5, XHTML_1_0_STRICT, XHTML_1_0_TRANSITIONAL,
@@ -109,11 +73,10 @@ typedef enum {
   HTML_4_01_FRAMESET, XHTML_BASIC_1_0, XHTML_BASIC_1_1
 } doctype_t;
 
-struct list_t {
+typedef struct list_t {
   const void *data;
   struct list_t *next;
-};
-typedef struct list_t list_t;
+} list_t;
 
 typedef struct {
   doctype_t doctype;
@@ -459,6 +422,7 @@ static int markdown_handler(request_rec *r)
 }
 
 
+
 static void *markdown_config(apr_pool_t * p, char *dummy)
 {
   markdown_conf *c =
@@ -566,10 +530,35 @@ static const char *set_markdown_flags(cmd_parms * cmd, void *conf,
   return NULL;
 }
 
+static const command_rec markdown_cmds[] = {
+  AP_INIT_TAKE1("MarkdownDoctype", set_markdown_doctype, NULL, OR_ALL,
+      "set Doctype"),
+  AP_INIT_TAKE1("MarkdownCSS", set_markdown_css, NULL, OR_ALL,
+      "set CSS"),
+  AP_INIT_TAKE1("MarkdownHeaderHtml", set_markdown_header, NULL, OR_ALL,
+      "set Header HTML"),
+  AP_INIT_TAKE1("MarkdownFooterHtml", set_markdown_footer, NULL, OR_ALL,
+      "set Footer HTML"),
+  AP_INIT_TAKE1("MarkdownFlags", set_markdown_flags, NULL, OR_ALL,
+      "set Discount flags"),
+  {NULL}
+};
+
 static void markdown_register_hooks(apr_pool_t * p)
 {
   ap_hook_handler(markdown_handler, NULL, NULL, APR_HOOK_MIDDLE);
 }
+
+/* Dispatch list for API hooks */
+extern "C" module AP_MODULE_DECLARE_DATA RL_MODULE_NAME_SUFFIX = {
+  STANDARD20_MODULE_STUFF,
+  markdown_config,            /* create per-dir    config structures */
+  NULL,                       /* merge  per-dir    config structures */
+  NULL,                       /* create per-server config structures */
+  NULL,                       /* merge  per-server config structures */
+  markdown_cmds,              /* table of config file commands       */
+  markdown_register_hooks     /* register hooks                      */
+};
 
 /*
  * Local variables:
