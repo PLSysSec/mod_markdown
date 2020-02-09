@@ -55,22 +55,12 @@ install:
 	echo LoadModule markdown_rlbox_nacl_module $(CURR_DIR)/.libs/mod_markdown_nacl.so | sudo tee -a /etc/apache2/mods-enabled/markdown.load
 
 bench:
+	if [ ! -e "/tmp/libmarkdown.so" ]; then \
+		echo "Apache related files not setup since comp restart. Setting up now."; \
+		$(MAKE) install; \
+	fi
 	autocannon --latency http://localhost/README.rlboxmd
 	autocannon --latency http://localhost/README.rlboxnaclmd
-
-# APACHE2_CONF_PATH:= $(shell \
-# 	if [ -e "/etc/apache2/httpd.conf" ]; then \
-# 		echo /etc/apache2/httpd.conf; \
-# 	else \
-# 		echo ""; \
-# 	fi \
-# )
-
-# ifeq ($(APACHE2_CONF_PATH),)
-# $(error Could not find the location of httpd.conf. Please edit the makefile to point to the location)
-# endif
-
-# MOD_MARKDOWN_ALREADY_ADDED:=$(shell cat $(APACHE2_CONF_PATH) | grep "LoadModule markdown_module")
 
 OUTPUT_LIBS_PATH=$(shell realpath ./libs)
 
@@ -78,21 +68,6 @@ install_deps:
 	# will be run by root repot
 	sudo apt install build-essential libtool automake autoconf
 	sudo apt install libmarkdown2-dev apache2 apache2-dev
-
-# add_markdown_to_config:
-# ifeq ($(MOD_MARKDOWN_ALREADY_ADDED),)
-# 	echo "" | sudo tee -a $(APACHE2_CONF_PATH)
-# 	echo "LoadModule markdown_module $(OUTPUT_LIBS_PATH)/mod_markdown.so" | sudo tee -a $(APACHE2_CONF_PATH)
-# 	echo "<Directory /var/www>" | sudo tee -a $(APACHE2_CONF_PATH)
-# 	echo "	AddHandler markdown .md" | sudo tee -a $(APACHE2_CONF_PATH)
-# 	echo "	DirectoryIndex index.md" | sudo tee -a $(APACHE2_CONF_PATH)
-# 	echo "</Directory>" | sudo tee -a $(APACHE2_CONF_PATH)
-# endif
-
-# check_if_md_file_exists:
-# ifeq (,$(wildcard /var/www/index.md))
-# 	sudo cp ./README.md /var/www/index.md
-# endif
 
 check_deps: install_deps # add_markdown_to_config check_if_md_file_exists
 
